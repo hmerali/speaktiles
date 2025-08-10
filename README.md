@@ -1,21 +1,21 @@
-# 🎯 SpeakTiles - Multimodal AAC Web App
+#SpeakTiles - Multimodal AAC Web App
 
 A modern, accessible communication board web application that works offline and can be installed as a Progressive Web App (PWA). Perfect for nonverbal or minimally verbal users to communicate using customizable tiles and text-to-speech.
 
-## ✨ Features
+##  Features
 
-- **🎯 Communication Board**: Tap tiles to build sentences and speak them aloud
-- **🎤 Voice Input**: Use speech recognition to add words to your sentence
-- **🔊 Text-to-Speech**: Built-in speech synthesis with multiple voice options
-- **📱 PWA Ready**: Install on your device for offline use
-- **🎨 Customizable**: Add/edit tiles, categories, colors, and emojis
-- **🔗 Shareable**: Generate QR codes and shareable links
-- **📁 Import/Export**: Save and load board configurations as JSON files
-- **♿ Accessible**: High contrast mode, keyboard navigation, and screen reader support
-- **🌐 Offline First**: Works without internet connection
-- **📱 Responsive**: Optimized for desktop, tablet, and mobile devices
+- ** Communication Board**: Tap tiles to build sentences and speak them aloud
+- ** Voice Input**: Use speech recognition to add words to your sentence
+- ** Text-to-Speech**: Built-in speech synthesis with multiple voice options
+- ** PWA Ready**: Install on your device for offline use
+- ** Customizable**: Add/edit tiles, categories, colors, and emojis
+- ** Shareable**: Generate QR codes and shareable links
+- ** Import/Export**: Save and load board configurations as JSON files
+- ** Accessible**: High contrast mode, keyboard navigation, and screen reader support
+- ** Offline First**: Works without internet connection
+- ** Responsive**: Optimized for desktop, tablet, and mobile devices
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 - Node.js 16+ and npm
@@ -64,7 +64,7 @@ npm run preview
 - **Storage**: Local Storage with JSON Import/Export
 - **Notifications**: Sonner toast notifications
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 speaktiles/
@@ -80,7 +80,7 @@ speaktiles/
 └── README.md              # This File
 ```
 
-## 🌟 Key Features Explained
+##  Key Features Explained
 
 ### **High Contrast Mode**
 Toggle high contrast for better visibility and accessibility. Changes the entire app theme to a dark, high-contrast design.
@@ -102,7 +102,7 @@ Full keyboard support for accessibility:
 - **QR Codes**: Generate QR codes for easy sharing
 - **JSON Export**: Save your board configuration as a file
 
-## 🎨 Customization
+##  Customization
 
 ### Adding New Tiles
 1. Right-click on a tile or click "+ Tile"
@@ -119,7 +119,7 @@ Full keyboard support for accessibility:
 - Adjust speech rate and pitch
 - Set language preferences
 
-## 📱 PWA Installation
+##  PWA Installation
 
 ### Desktop (Chrome/Edge)
 1. Look for the install icon in the address bar
@@ -130,14 +130,14 @@ Full keyboard support for accessibility:
 2. Use "Add to Home Screen" from the share menu
 3. The app will work offline after installation
 
-## 🌐 Browser Support
+##  Browser Support
 
 - **Chrome**: Full support (PWA, Speech Recognition, Offline)
 - **Safari**: Full support (PWA, Speech Recognition, Offline)
 - **Firefox**: Full support (PWA, Speech Recognition, Offline)
 - **Edge**: Full support (PWA, Speech Recognition, Offline)
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -145,18 +145,18 @@ Full keyboard support for accessibility:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - Built with React and modern web technologies
 - Inspired by AAC (Augmentative and Alternative Communication) needs
 - Designed for accessibility and inclusivity
 - PWA capabilities powered by modern web standards
 
-## 📞 Support
+##  Support
 
 If you have questions or need help:
 - Open an issue on GitHub
