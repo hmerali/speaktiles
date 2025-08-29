@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SpeakTiles</title>
+    <title>Hani</title>
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#111827">
     <style>
@@ -98,8 +98,61 @@
       
       .status.offline {
         color: #dc2626;
-        border-color: #ef4444;
       }
+      
+      /* NEW: Search and drag & drop styles */
+      .search-container {
+        position: relative;
+        width: 100%;
+      }
+      
+      .tile.dragging {
+        opacity: 0.5;
+        transform: scale(0.95);
+        z-index: 1000;
+      }
+      
+      .tile.drag-over {
+        border: 2px dashed var(--accent);
+        background: var(--card-bg) !important;
+      }
+      
+      .drag-handle {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        font-size: 12px;
+        opacity: 0.6;
+        pointer-events: none;
+        color: var(--fg);
+      }
+      
+      .tile:hover .drag-handle {
+        opacity: 1;
+      }
+      
+      .tabs button {
+        position: relative;
+      }
+      
+      .tabs button:hover::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--accent);
+      }
+      
+      /* NEW: Voice input button animations */
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+      }
+      
+
       
       /* Focus styles for accessibility */
       button:focus-visible,
@@ -132,6 +185,60 @@
           flex-direction: column;
           align-items: flex-start;
         }
+      }
+      
+      /* Main action buttons - Big and accessible for kids */
+      .action-button {
+        padding: 16px 24px !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        border-radius: 16px !important;
+        min-height: 60px !important;
+        min-width: 120px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+      }
+      
+      .action-button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+      }
+      
+      .action-button:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+      }
+      
+      /* Speak button - Primary action, biggest */
+      .action-button.speak {
+        background: var(--accent) !important;
+        color: #fff !important;
+        border-color: var(--accent) !important;
+        font-size: 20px !important;
+        min-width: 140px !important;
+        min-height: 70px !important;
+      }
+      
+      /* Undo and Clear buttons - Secondary actions */
+      .action-button.undo,
+      .action-button.clear {
+        background: var(--tile-bg) !important;
+        color: var(--fg) !important;
+        border-color: var(--ring) !important;
+      }
+      
+      /* High contrast mode for action buttons */
+      :root[data-high-contrast="true"] .action-button {
+        border-width: 3px !important;
+        box-shadow: 0 4px 8px rgba(255,255,255,0.2) !important;
+      }
+      
+      :root[data-high-contrast="true"] .action-button.speak {
+        background: var(--accent) !important;
+        border-color: #fff !important;
       }
     </style>
   </head>

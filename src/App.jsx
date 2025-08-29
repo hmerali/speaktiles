@@ -59,6 +59,14 @@ export default function App(){
   const [showEmoji, setShowEmoji] = useLocalStorage('show-emoji', true)
   const [showLabels, setShowLabels] = useLocalStorage('show-labels', true)
 
+  // NEW: Search functionality
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+
+  // NEW: Drag and drop state
+  const [draggedTile, setDraggedTile] = useState(null)
+  const [dragOverTile, setDragOverTile] = useState(null)
+
   // Apply high contrast mode to document
   useEffect(() => {
     if (highContrast) {
@@ -91,6 +99,18 @@ export default function App(){
   },[])
   const selectedVoice = useMemo(()=> voices.find(v=>v.name===voiceName) ?? null, [voices, voiceName])
 
+  // NEW: Filtered tiles based on search
+  const filteredTiles = useMemo(() => {
+    if (!searchQuery.trim()) return activeCat.tiles
+    
+    const query = searchQuery.toLowerCase()
+    return activeCat.tiles.filter(tile => 
+      tile.label.toLowerCase().includes(query) ||
+      (tile.speak && tile.speak.toLowerCase().includes(query)) ||
+      tile.emoji.includes(query)
+    )
+  }, [activeCat.tiles, searchQuery])
+
   // import from URL hash
   useEffect(()=>{
     try{
@@ -117,15 +137,53 @@ export default function App(){
   const undo = ()=> setPhrase(p=>p.slice(0,-1))
   const clear = ()=> setPhrase([])
   const speakNow = ()=>{
-    const text = phrase.join(' '); if(!text) return;
+    const text = phrase.join(' '); 
+    if(!text) {
+      toast.error('No text to speak. Add some tiles first!')
+      return
+    }
+    
+
+    
     try {
-      const u = new SpeechSynthesisUtterance(text)
-      if (selectedVoice) u.voice = selectedVoice
-      window.speechSynthesis.cancel(); window.speechSynthesis.speak(u)
-      toast.success('Speaking...')
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel()
+      
+      const utterance = new SpeechSynthesisUtterance(text)
+      
+      // Set voice if one is selected
+      if (selectedVoice) {
+        utterance.voice = selectedVoice
+        console.log('Using voice:', selectedVoice.name)
+      }
+      
+      // Set speech properties for better quality
+      utterance.rate = 0.9 // Slightly slower for clarity
+      utterance.pitch = 1.0 // Normal pitch
+      utterance.volume = 1.0 // Full volume
+      
+      // Add event handlers for better user feedback
+      utterance.onstart = () => {
+        console.log('Started speaking:', text)
+        toast.success('🗣️ Speaking...')
+      }
+      
+      utterance.onend = () => {
+        console.log('Finished speaking:', text)
+        toast.success('✅ Finished speaking')
+      }
+      
+      utterance.onerror = (e) => {
+        console.error('Speech synthesis error:', e)
+        toast.error('Speech synthesis error. Please try again.')
+      }
+      
+      // Start speaking
+      window.speechSynthesis.speak(utterance)
+      
     } catch (e) {
       console.error('Speech synthesis error:', e)
-      toast.error('Could not speak text')
+      toast.error('Could not speak text. Please try again.')
     }
   }
 
@@ -168,6 +226,140 @@ export default function App(){
       console.error('Failed to save category name:', e)
       toast.error('Could not save category name')
     }
+  }
+
+  // NEW: Delete category function
+  const deleteCategory = (catId) => {
+    try {
+      if (board.categories.length <= 1) {
+        toast.error('Cannot delete the last category')
+        return
+      }
+      
+      setBoard(b => ({
+        ...b, 
+        categories: b.categories.filter(c => c.id !== catId)
+      }))
+      
+      // Switch to first available category if current one was deleted
+      if (activeCatId === catId) {
+        const remainingCats = board.categories.filter(c => c.id !== catId)
+        setActiveCatId(remainingCats[0]?.id ?? 'core')
+      }
+      
+      toast.success('Category deleted')
+    } catch (e) {
+      console.error('Failed to delete category:', e)
+      toast.error('Could not delete category')
+    }
+  }
+
+  // NEW: Move tile function for drag and drop
+  const moveTile = (fromCatId, toCatId, tileId, newIndex) => {
+    try {
+      setBoard(b => {
+        const fromCat = b.categories.find(c => c.id === fromCatId)
+        const toCat = b.categories.find(c => c.id === toCatId)
+        
+        if (!fromCat || !toCat) return b
+        
+        const tile = fromCat.tiles.find(t => t.id === tileId)
+        if (!tile) return b
+        
+        // Remove from source category
+        const updatedFromCat = {
+          ...fromCat,
+          tiles: fromCat.tiles.filter(t => t.id !== tileId)
+        }
+        
+        // Add to target category at specific position
+        const updatedToCat = {
+          ...toCat,
+          tiles: [
+            ...toCat.tiles.slice(0, newIndex),
+            tile,
+            ...toCat.tiles.slice(newIndex)
+          ]
+        }
+        
+        return {
+          ...b,
+          categories: b.categories.map(c => {
+            if (c.id === fromCatId) return updatedFromCat
+            if (c.id === toCatId) return updatedToCat
+            return c
+          })
+        }
+      })
+      
+      toast.success('Tile moved successfully')
+    } catch (e) {
+      console.error('Failed to move tile:', e)
+      toast.error('Could not move tile')
+    }
+  }
+
+  // NEW: Reorder tiles within same category
+  const reorderTiles = (catId, fromIndex, toIndex) => {
+    try {
+      setBoard(b => {
+        const cat = b.categories.find(c => c.id === catId)
+        if (!cat) return b
+        
+        const newTiles = [...cat.tiles]
+        const [movedTile] = newTiles.splice(fromIndex, 1)
+        newTiles.splice(toIndex, 0, movedTile)
+        
+        return {
+          ...b,
+          categories: b.categories.map(c => 
+            c.id === catId ? { ...c, tiles: newTiles } : c
+          )
+        }
+      })
+      
+      toast.success('Tiles reordered successfully')
+    } catch (e) {
+      console.error('Failed to reorder tiles:', e)
+      toast.error('Could not reorder tiles')
+    }
+  }
+
+  // NEW: Drag and drop handlers
+  const handleDragStart = (e, tile, catId, index) => {
+    setDraggedTile({ tile, catId, index })
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', tile.id)
+  }
+
+  const handleDragOver = (e, tile, catId, index) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverTile({ tile, catId, index })
+  }
+
+  const handleDrop = (e, targetTile, targetCatId, targetIndex) => {
+    e.preventDefault()
+    
+    if (!draggedTile) return
+    
+    const { tile: draggedTileData, catId: sourceCatId, index: sourceIndex } = draggedTile
+    
+    if (sourceCatId === targetCatId) {
+      // Reorder within same category
+      reorderTiles(sourceCatId, sourceIndex, targetIndex)
+    } else {
+      // Move to different category
+      moveTile(sourceCatId, targetCatId, draggedTileData.id, targetIndex)
+    }
+    
+    setDraggedTile(null)
+    setDragOverTile(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedTile(null)
+    setDragOverTile(null)
   }
 
   const exportJSON = ()=>{
@@ -230,8 +422,7 @@ export default function App(){
   }
 
   // speech recognition with better fallbacks
-  const [listening, setListening] = useState(false)
-  const recRef = useRef(null)
+
   const toggleListen = ()=>{
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR){ 
@@ -245,28 +436,66 @@ export default function App(){
         r.continuous = false; 
         r.interimResults = false; 
         r.maxAlternatives = 1
+        
+        r.onstart = () => {
+          console.log('Speech recognition started')
+          setListening(true)
+          toast.success('🎤 Listening... Speak now!')
+        }
         r.onresult = (ev)=>{
           const text = ev.results?.[0]?.[0]?.transcript || ''; 
+          console.log('Speech recognition result:', text)
+          
           if(text) {
             const words = text.split(/\s+/).filter(word => word.trim().length > 0)
-            setPhrase(p=>[...p, ...words])
-            toast.success(`Added: ${words.join(', ')}`)
+            if (words.length > 0) {
+              setPhrase(p=>[...p, ...words])
+              toast.success(`✅ Added: "${words.join(', ')}"`)
+              
+              // Auto-speak the added words for immediate feedback
+              setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(text)
+                if (selectedVoice) utterance.voice = selectedVoice
+                utterance.rate = 0.9 // Slightly slower for clarity
+                window.speechSynthesis.speak(utterance)
+              }, 100)
+            }
           }
         }
-        r.onend = ()=> setListening(false)
+        r.onend = ()=> {
+          console.log('Speech recognition ended')
+          setListening(false)
+        }
         r.onerror = (e)=>{
           console.error('Speech recognition error:', e)
           setListening(false)
-          if (e.error === 'no-speech') {
-            toast.error('No speech detected. Please try again.')
-          } else {
-            toast.error('Speech recognition error. Please try again.')
+          
+          let errorMessage = 'Speech recognition error. Please try again.'
+          
+          switch(e.error) {
+            case 'no-speech':
+              errorMessage = 'No speech detected. Please speak clearly and try again.'
+              break
+            case 'audio-capture':
+              errorMessage = 'Microphone not accessible. Please check permissions and try again.'
+              break
+            case 'not-allowed':
+              errorMessage = 'Microphone access denied. Please allow microphone access and try again.'
+              break
+            case 'network':
+              errorMessage = 'Network error. Please check your connection and try again.'
+              break
+            case 'service-not-allowed':
+              errorMessage = 'Speech recognition service not available. Please try again later.'
+              break
+            default:
+              errorMessage = `Speech recognition error: ${e.error}. Please try again.`
           }
+          
+          toast.error(errorMessage)
         }
         recRef.current = r; 
-        setListening(true); 
         r.start()
-        toast.success('Listening... Speak now')
       } catch (e) {
         console.error('Speech recognition setup failed:', e)
         toast.error('Could not start speech recognition')
@@ -276,13 +505,17 @@ export default function App(){
       try {
         recRef.current?.stop?.(); 
         setListening(false)
-        toast.success('Stopped listening')
+        toast.success('🛑 Stopped listening')
       } catch (e) {
         console.error('Failed to stop speech recognition:', e)
         setListening(false)
       }
     }
   }
+
+
+
+
 
   const gridCols = tileSize>=220? 'grid cols-4': (tileSize>=160? 'grid cols-6': 'grid cols-8')
 
@@ -294,7 +527,7 @@ export default function App(){
     <div className="container">
       <header>
         <div>
-          <h1>SpeakTiles</h1>
+          <h1>Hani</h1>
           <div className="muted">Tap tiles to build a sentence. Press Speak.</div>
           <div className="status-indicators">
             <span className={`status ${isOnline ? 'online' : 'offline'}`}>
@@ -305,19 +538,23 @@ export default function App(){
         </div>
         <div className="actions">
           <button onClick={openShare} disabled={!isOnline}>Share</button>
-          <button onClick={toggleListen}>{listening? 'Listening…':'Voice Input'}</button>
+
+          
+
           <button className="primary" onClick={()=> window.matchMedia('(display-mode: standalone)').matches? toast.message('Already installed'): (navigator?.serviceWorker? toast.message('Use your browser "Add to Home Screen"'): toast.message('Service worker not available'))}>Install</button>
           <button onClick={addCategory}>+ Category</button>
         </div>
       </header>
 
+
+
       <div className="card">
         <div className="content row">
           {phrase.length? phrase.map((w,i)=>(<span key={i} className="chip">{w}</span>)): <span className="muted">Tap tiles or use the mic to add words…</span>}
           <div style={{marginLeft:'auto'}} className="row">
-            <button onClick={speakNow}>Speak</button>
-            <button onClick={undo} disabled={!phrase.length}>Undo</button>
-            <button onClick={clear} disabled={!phrase.length}>Clear</button>
+                    <button className="action-button speak" onClick={speakNow}>🗣️ Speak</button>
+        <button className="action-button undo" onClick={undo} disabled={!phrase.length}>↶ Undo</button>
+        <button className="action-button clear" onClick={clear} disabled={!phrase.length}>🗑️ Clear</button>
           </div>
         </div>
       </div>
@@ -329,6 +566,27 @@ export default function App(){
       <div className="row" style={{marginBottom:8}}>
         <input aria-label="Category name" value={activeCat.name} onChange={e=>saveCategoryName(activeCat.id, e.target.value)} />
         <button onClick={()=> setEditing({catId: activeCat.id})}>+ Tile</button>
+        
+        {/* NEW: Delete category button */}
+        {board.categories.length > 1 && (
+          <button 
+            onClick={() => deleteCategory(activeCat.id)}
+            style={{color: '#b91c1c', marginLeft: '8px'}}
+            title="Delete this category"
+          >
+            🗑️ Delete Category
+          </button>
+        )}
+        
+        {/* NEW: Search toggle */}
+        <button 
+          onClick={() => setShowSearch(!showSearch)}
+          style={{marginLeft: '8px'}}
+          title="Toggle search"
+        >
+          {showSearch ? '🔍' : '🔍'}
+        </button>
+        
         <span className="muted">Tile size</span>
         <input type="range" min="120" max="260" step="10" value={tileSize} onChange={e=>setTileSize(parseInt(e.target.value))}/>
         <label className="row"><input type="checkbox" checked={highContrast} onChange={e=>setHighContrast(e.target.checked)} /> High contrast</label>
@@ -338,23 +596,72 @@ export default function App(){
           <option value="">Default Voice</option>
           {voices.map(v=>(<option key={v.name} value={v.name}>{v.name} ({v.lang})</option>))}
         </select>
+        
+
       </div>
 
+      {/* NEW: Search input */}
+      {showSearch && (
+        <div className="search-container" style={{marginBottom: '12px', position: 'relative'}}>
+          <input
+            type="text"
+            placeholder="Search tiles..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid var(--border)',
+              borderRadius: '6px',
+              fontSize: '16px'
+            }}
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: '8px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                fontSize: '18px',
+                cursor: 'pointer',
+                color: 'var(--text)'
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+
       <div className={gridCols} style={{gap:10}}>
-        {activeCat.tiles.map((t, index) => (
+        {filteredTiles.map((t, index) => (
           <button 
             key={t.id} 
-            className="tile" 
+            className={`tile ${draggedTile?.tile.id === t.id ? 'dragging' : ''} ${dragOverTile?.tile.id === t.id ? 'drag-over' : ''}`}
             style={{
               height:tileSize,
               minHeight:tileSize, 
-              background:t.color||'var(--tile-bg)'
+              background:t.color||'var(--tile-bg)',
+              opacity: draggedTile?.tile.id === t.id ? 0.5 : 1,
+              transform: draggedTile?.tile.id === t.id ? 'scale(0.95)' : 'none',
+              transition: 'all 0.2s ease',
+              position: 'relative'
             }} 
             onClick={()=>addWord(t)} 
             onContextMenu={(e)=>{
               e.preventDefault(); 
               setEditing({catId:activeCat.id, tile:t})
             }}
+            // NEW: Drag and drop attributes
+            draggable={true}
+            onDragStart={(e) => handleDragStart(e, t, activeCat.id, index)}
+            onDragOver={(e) => handleDragOver(e, t, activeCat.id, index)}
+            onDrop={(e) => handleDrop(e, t, activeCat.id, index)}
+            onDragEnd={handleDragEnd}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
@@ -365,7 +672,7 @@ export default function App(){
               }
             }}
             tabIndex={0}
-            aria-label={`${t.label} tile. Press Enter to add to sentence, Delete to edit.`}
+            aria-label={`${t.label} tile. Press Enter to add to sentence, Delete to edit, or drag to reorder.`}
           >
             {showEmoji && (
               t.imageUrl? 
@@ -377,9 +684,41 @@ export default function App(){
                 <span className="emoji">{t.emoji||'🖱️'}</span>
             )}
             {showLabels && <span className="label">{t.label}</span>}
+            
+            {/* NEW: Drag handle indicator */}
+            <div 
+              className="drag-handle"
+              style={{
+                position: 'absolute',
+                top: '4px',
+                right: '4px',
+                fontSize: '12px',
+                opacity: 0.6,
+                pointerEvents: 'none',
+                color: 'var(--text)'
+              }}
+            >
+              ⋮⋮
+            </div>
           </button>
         ))}
       </div>
+
+      {/* NEW: Search results info */}
+      {showSearch && searchQuery && (
+        <div style={{marginTop: '8px', textAlign: 'center', color: 'var(--muted)'}}>
+          Found {filteredTiles.length} tile{filteredTiles.length !== 1 ? 's' : ''} matching "{searchQuery}"
+        </div>
+      )}
+
+      {/* NEW: No results message */}
+      {showSearch && searchQuery && filteredTiles.length === 0 && (
+        <div style={{marginTop: '16px', textAlign: 'center', color: 'var(--muted)'}}>
+          No tiles found matching "{searchQuery}"
+        </div>
+      )}
+
+
 
       <input 
         ref={fileRef} 
