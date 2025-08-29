@@ -55,7 +55,7 @@ export default function App(){
   const [isOnline, setIsOnline] = useState(navigator.onLine)
 
   const [tileSize, setTileSize] = useLocalStorage('tile-size', 140)
-  const [highContrast, setHighContrast] = useLocalStorage('hc', true)
+
   const [showEmoji, setShowEmoji] = useLocalStorage('show-emoji', true)
   const [showLabels, setShowLabels] = useLocalStorage('show-labels', true)
 
@@ -67,14 +67,7 @@ export default function App(){
   const [draggedTile, setDraggedTile] = useState(null)
   const [dragOverTile, setDragOverTile] = useState(null)
 
-  // Apply high contrast mode to document
-  useEffect(() => {
-    if (highContrast) {
-      document.documentElement.setAttribute('data-high-contrast', 'true')
-    } else {
-      document.documentElement.removeAttribute('data-high-contrast')
-    }
-  }, [highContrast])
+
 
   // Monitor online/offline status
   useEffect(() => {
@@ -589,7 +582,7 @@ export default function App(){
         
         <span className="muted">Tile size</span>
         <input type="range" min="120" max="260" step="10" value={tileSize} onChange={e=>setTileSize(parseInt(e.target.value))}/>
-        <label className="row"><input type="checkbox" checked={highContrast} onChange={e=>setHighContrast(e.target.checked)} /> High contrast</label>
+
         <label className="row"><input type="checkbox" checked={showEmoji} onChange={e=>setShowEmoji(e.target.checked)} /> Emoji</label>
         <label className="row"><input type="checkbox" checked={showLabels} onChange={e=>setShowLabels(e.target.checked)} /> Labels</label>
         <select value={voiceName} onChange={e=>setVoiceName(e.target.value)}>

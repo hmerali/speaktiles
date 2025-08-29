@@ -11,7 +11,7 @@ A modern, accessible communication board web application that works offline and 
 - **🎨 Customizable**: Add/edit tiles, categories, colors, and emojis
 - **🔗 Shareable**: Generate QR codes and shareable links
 - **📁 Import/Export**: Save and load board configurations as JSON files
-- **♿ Accessible**: High contrast mode, keyboard navigation, and screen reader support
+- **♿ Accessible**: Keyboard navigation and screen reader support
 - **🌐 Offline First**: Works without internet connection
 - **📱 Responsive**: Optimized for desktop, tablet, and mobile devices
 
@@ -82,8 +82,7 @@ speaktiles/
 
 ## 🌟 Key Features Explained
 
-### **High Contrast Mode**
-Toggle high contrast for better visibility and accessibility. Changes the entire app theme to a dark, high-contrast design.
+
 
 ### **Offline Functionality**
 The service worker caches all assets and provides offline access to your communication boards.
